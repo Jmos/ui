@@ -30,7 +30,7 @@ class User extends \Atk4\Data\Model
         $this->addField('firstname', ['type' => 'string']);
         $this->addField('lastname', ['type' => 'string']);
 
-        $this->containsMany('addresses', [Address::class, 'system' => false]);
+        $this->containsMany('addresses', ['model' => [Address::class], 'system' => false]);
     }
 }
 
@@ -81,7 +81,7 @@ class Email extends \Atk4\Data\Model
 
         $this->addField('email_address', ['type' => 'string']);
 
-        $this->hasOne('user_id', [User::class]);
+        $this->hasOne('user_id', ['model' => [User::class]]);
     }
 }
 
@@ -99,7 +99,7 @@ class User extends \Atk4\Data\Model
         $this->addField('firstname', ['type' => 'string']);
         $this->addField('lastname', ['type' => 'string']);
 
-        $this->hasMany('Emails', [Email::class]);
+        $this->hasMany('Emails', ['model' => [Email::class]]);
     }
 }
 ```
@@ -121,7 +121,7 @@ $ml->setReferenceModel('Emails');
 
 // set up saving of Email on Form submit
 $userForm->onSubmit(function (Form $form) use ($ml) {
-    $form->model->save();
+    $form->entity->save();
     // save emails record related to current user
     $ml->saveRows();
 
@@ -159,7 +159,7 @@ class InventoryItem extends \Atk4\Data\Model
         $this->addField('box', ['type' => 'integer', 'caption' => '# of Boxes', 'required' => true, 'ui' => ['multiline' => [Form\Control\Multiline::TABLE_CELL => ['width' => 2]]]]);
         $this->addExpression('total', ['expr' => function (Model $row) {
             return $row->get('qty') * $row->get('box');
-        }, 'type' => 'integer']);
+        }, 'type' => 'bigint']);
     }
 }
 ```
@@ -242,7 +242,7 @@ $this->addExpression('total', [
     'expr' => function (Model $row) {
         return $row->get('qty') * $row->get('box');
     },
-    'type' => 'integer',
+    'type' => 'bigint',
     'ui' => ['multiline' => [Multiline::TABLE_CELL => ['width' => 1, 'class' => 'blue']]],
 ]);
 ```

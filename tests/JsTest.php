@@ -29,7 +29,7 @@ class JsTest extends TestCase
     public function testStrings(): void
     {
         self::assertSame('\'\\\'\', \'"\', \'\n\'', (new JsExpression('[], [], []', ['\'', '"', "\n"]))->jsRender());
-        self::assertSame('\'\\\'a"b\\\\\\\'c\\\\" \\\'"\'', (new JsExpression('[]', ['\'a"b\\\'c\\" \'"']))->jsRender());
+        self::assertSame('\'\\\'a"b\\\\\\\'c\\\" \\\'"\'', (new JsExpression('[]', ['\'a"b\\\'c\" \'"']))->jsRender());
     }
 
     public function testNumbers(): void
@@ -56,7 +56,7 @@ class JsTest extends TestCase
         ] as [$in, $expected]) {
             $jsRendered = (new JsExpression('[]', [$in]))->jsRender();
             if (substr($jsRendered, 0, 1) === '\'') {
-                $jsRendered = '"' . str_replace('"', '\\"', substr($jsRendered, 1, -1)) . '"';
+                $jsRendered = '"' . str_replace('"', '\"', substr($jsRendered, 1, -1)) . '"';
             }
             self::assertSame($expected, $jsRendered);
 
@@ -111,14 +111,14 @@ class JsTest extends TestCase
     public function testChain1(): void
     {
         $c = new JsChain('$myInput');
-        $c->getTextInRange('start', 'end'); // @phpstan-ignore-line
+        $c->getTextInRange('start', 'end'); // @phpstan-ignore method.notFound
         self::assertSame('$myInput.getTextInRange(\'start\', \'end\')', $c->jsRender());
     }
 
     public function testChain2(): void
     {
         $c = new JsChain('$myInput');
-        $c->getTextInRange(new JsExpression('getStart()'), 'end'); // @phpstan-ignore-line
+        $c->getTextInRange(new JsExpression('getStart()'), 'end'); // @phpstan-ignore method.notFound
         self::assertSame('$myInput.getTextInRange(getStart(), \'end\')', $c->jsRender());
     }
 
@@ -253,13 +253,13 @@ class JsTest extends TestCase
     {
         $this->expectException(\TypeError::class);
         $this->expectExceptionMessage((\PHP_MAJOR_VERSION === 7 ? 'must implement interface' : 'must be of type') . ' Atk4\Ui\Js\JsExpressionable, string given');
-        new JsBlock(['a()']); // @phpstan-ignore-line
+        new JsBlock(['a()']); // @phpstan-ignore argument.type
     }
 
     public function testBlockInvalidArrayTypeException(): void
     {
         $this->expectException(\TypeError::class);
         $this->expectExceptionMessage((\PHP_MAJOR_VERSION === 7 ? 'must implement interface' : 'must be of type') . ' Atk4\Ui\Js\JsExpressionable, array given');
-        new JsBlock([[]]); // @phpstan-ignore-line
+        new JsBlock([[]]); // @phpstan-ignore argument.type
     }
 }

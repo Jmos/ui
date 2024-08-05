@@ -10,6 +10,7 @@ use Atk4\Ui\AbstractView;
 use Atk4\Ui\Callback;
 use Atk4\Ui\Console;
 use Atk4\Ui\Exception;
+use Atk4\Ui\Form;
 use Atk4\Ui\JsCallback;
 use Atk4\Ui\JsSse;
 use Atk4\Ui\Loader;
@@ -17,6 +18,7 @@ use Atk4\Ui\Modal;
 use Atk4\Ui\Popup;
 use Atk4\Ui\View;
 use Atk4\Ui\VirtualPage;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 class ViewTest extends TestCase
 {
@@ -28,8 +30,8 @@ class ViewTest extends TestCase
         $v->set('foo');
 
         $v->setApp($this->createApp());
-        $a = $v->render();
-        $b = $v->render();
+        $a = $v->renderToHtml();
+        $b = $v->renderToHtml();
         self::assertSame($a, $b);
     }
 
@@ -39,7 +41,7 @@ class ViewTest extends TestCase
         $v->set('foo');
 
         $v->setApp($this->createApp());
-        $v->render();
+        $v->renderAll();
 
         $this->expectException(Exception::class);
         View::addTo($v);
@@ -49,12 +51,12 @@ class ViewTest extends TestCase
     {
         $v = new View();
         $v->setApp($this->createApp());
-        self::assertSame('<div id="atk"></div>', $v->render());
+        self::assertSame('<div id="atk"></div>', $v->renderToHtml());
 
         $v = new View();
         $v->element = 'img';
         $v->setApp($this->createApp());
-        self::assertSame('<img id="atk">', $v->render());
+        self::assertSame('<img id="atk">', $v->renderToHtml());
     }
 
     public function testAddDelayedInit(): void
@@ -103,6 +105,22 @@ class ViewTest extends TestCase
         $v->setModel($m2);
     }
 
+    public function testSetModelEntity(): void
+    {
+        $form = new Form();
+        $form->setApp($this->createApp());
+        $form->invokeInit();
+        $entity = (new Model())->createEntity();
+        $form->setModel($entity);
+
+        self::assertSame($entity, $form->entity);
+        self::assertFalse((new \ReflectionProperty(Form::class, 'model'))->isInitialized($form));
+
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('Use View::$entity property instead for entity access');
+        $form->model; // @phpstan-ignore expr.resultUnused
+    }
+
     public function testSetSourceZeroKeyException(): void
     {
         $v = new View();
@@ -121,7 +139,7 @@ class ViewTest extends TestCase
 
         $this->expectException(Exception::class);
         $this->expectExceptionMessage('Not sure what to do with argument');
-        $v->set(1); // @phpstan-ignore-line
+        $v->set(1); // @phpstan-ignore argument.type
     }
 
     /**
@@ -129,6 +147,7 @@ class ViewTest extends TestCase
      *
      * @dataProvider provideSetNotClosureErrorCases
      */
+    #[DataProvider('provideSetNotClosureErrorCases')]
     public function testSetNotClosureError(string $class): void
     {
         $v = new $class();
@@ -150,5 +169,14 @@ class ViewTest extends TestCase
         yield [Modal::class];
         yield [Popup::class];
         yield [VirtualPage::class];
+    }
+
+    public function testJsCallbackGetUrlException(): void
+    {
+        $v = new JsCallback();
+
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('Do not use getUrl on JsCallback, use getJsUrl()');
+        $v->getUrl();
     }
 }

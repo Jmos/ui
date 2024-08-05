@@ -37,7 +37,7 @@ $img->onUpload(static function (array $postFile) use ($form, $img) {
     }
 
     $img->setThumbnailSrc($img->getApp()->cdn['atk'] . '/logo.png');
-    $img->set('123456', $postFile['name'] . ' (token: 123456)'); // @phpstan-ignore-line
+    $img->set('123456', $postFile['name'] . ' (token: 123456)'); // @phpstan-ignore arguments.count
 
     // do file processing here...
 
@@ -87,5 +87,5 @@ $control->onUpload(static function (array $postFile) use ($form, $control) {
 
 $form->onSubmit(static function (Form $form) {
     // implement submission here
-    return $form->jsSuccess('Thanks for submitting file: ' . $form->model->get('img') . ' / ' . $form->model->get('file'));
+    return $form->jsSuccess('Thanks for submitting file: ' . $form->entity->get('img') . ' / ' . $form->entity->get('file'));
 });

@@ -111,10 +111,6 @@ class VirtualPage extends View
                 $this->getApp()->terminateJson($this);
             }
 
-            if ($this->getApp()->hasRequestQueryParam('__atk_tab')) {
-                $this->getApp()->terminateHtml($this->renderToTab());
-            }
-
             // do not terminate if callback supplied (no cutting)
             if ($mode !== 'callback') {
                 $this->getApp()->terminateHtml($this);

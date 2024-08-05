@@ -58,7 +58,7 @@ $form->addField('email');
 $form->onSubmit(function (Form $form) {
     // implement subscribe here
 
-    return $form->jsSuccess('Subscribed ' . $form->model->get('email') . ' to newsletter.');
+    return $form->jsSuccess('Subscribed ' . $form->entity->get('email') . ' to newsletter.');
 });
 
 // decorate anything
@@ -129,8 +129,8 @@ It's easy to create your own application styling. Here are some example UI:
 As of version 2.0 - Agile Toolkit offers support for User Actions. Those are easy to define in your Data Model declaration:
 
 ```php
-$this->addUserAction('archive', function (Model $m) {
-    $m->set('is_archived', true);
+$this->addUserAction('archive', function (Model $entity) {
+    $this->set('is_archived', true);
     $this->saveAndUnload();
 });
 ```
@@ -224,7 +224,7 @@ _All components can be view using the [demos](https://ui.atk4.org/demos/) applic
 
 | Component       | Description                                                           | Introduced |
 | --------------- | --------------------------------------------------------------------- | ---------- |
-| View            | Template, Render Tree and various patterns                            | 0.1        |
+| View            | Template, render tree and various patterns                            | 0.1        |
 | Button          | Button in various variations including icons, labels, styles and tags | 0.1        |
 | Input           | Decoration of input fields, integration with buttons.                 | 0.2        |
 | JS              | Assign JS events and abstraction of PHP callbacks.                    | 0.2        |

@@ -55,10 +55,10 @@ $crud = Crud::addTo($column, [
 // condition on the model can be applied on a model
 $model = new Country($app->db);
 $model->addCondition($model->fieldName()->numcode, '<', 200);
-$model->onHook(Model::HOOK_VALIDATE, static function (Country $model, ?string $intent) {
+$model->onHook(Model::HOOK_VALIDATE, static function (Country $entity, ?string $intent) {
     $err = [];
-    if ($model->numcode >= 200) {
-        $err[$model->fieldName()->numcode] = 'Should be less than 200';
+    if ($entity->numcode >= 200) {
+        $err[$entity->fieldName()->numcode] = 'Should be less than 200';
     }
 
     return $err;
@@ -86,7 +86,7 @@ $myExecutorClass = AnonymousClassNameCache::get_class(fn () => new class() exten
 
         if (File::assertInstanceOf($this->action->getEntity())->is_folder) {
             Grid::addTo($right, ['menu' => false, 'ipp' => 5])
-                ->setModel(File::assertInstanceOf($this->getAction()->getModel())->SubFolder);
+                ->setModel(File::assertInstanceOf($this->getAction()->getModel())->subFolder);
         } else {
             Message::addTo($right, ['Not a folder', 'type' => 'warning']);
         }

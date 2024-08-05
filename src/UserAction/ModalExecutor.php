@@ -115,34 +115,6 @@ class ModalExecutor extends Modal implements JsExecutorInterface
         ]);
     }
 
-    /**
-     * Assign a View that will fire action execution.
-     * If action require steps, it will automatically initialize
-     * proper step to execute first.
-     *
-     * @param array<string, string> $urlArgs
-     *
-     * @return $this
-     */
-    public function assignTrigger(View $view, array $urlArgs = [], string $when = 'click', string $selector = null): self
-    {
-        if (!$this->actionInitialized) {
-            throw new Exception('Action must be set prior to assign trigger');
-        }
-
-        if ($this->steps !== []) {
-            // use modal for stepping action
-            $urlArgs['step'] = $this->step;
-            if ($this->action->enabled) {
-                $view->on($when, $selector, $this->jsLoadAndShow($urlArgs));
-            } else {
-                $view->addClass('disabled');
-            }
-        }
-
-        return $this;
-    }
-
     #[\Override]
     public function jsExecute(array $urlArgs = []): JsBlock
     {
@@ -158,8 +130,8 @@ class ModalExecutor extends Modal implements JsExecutorInterface
     /**
      * Return proper JS statement need after action execution.
      *
-     * @param mixed      $obj
-     * @param string|int $id
+     * @param mixed $obj
+     * @param mixed $id
      */
     protected function jsGetExecute($obj, $id): JsBlock
     {
@@ -169,7 +141,7 @@ class ModalExecutor extends Modal implements JsExecutorInterface
 
         return new JsBlock([
             $this->jsHide(),
-            JsBlock::fromHookResult($this->hook(BasicExecutor::HOOK_AFTER_EXECUTE, [$obj, $id]) // @phpstan-ignore-line
+            JsBlock::fromHookResult($this->hook(BasicExecutor::HOOK_AFTER_EXECUTE, [$obj, $id]) // @phpstan-ignore ternary.shortNotAllowed
                 ?: ($success ?? new JsToast('Success' . (is_string($obj) ? (': ' . $obj) : '')))),
             $this->loader->jsClearStoreData(true),
         ]);

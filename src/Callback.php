@@ -49,7 +49,7 @@ class Callback extends AbstractView
         $this->setUrlTrigger($this->urlTrigger);
     }
 
-    public function setUrlTrigger(string $trigger = null): void
+    public function setUrlTrigger(?string $trigger = null): void
     {
         $this->urlTrigger = $trigger ?? $this->name;
 
@@ -89,7 +89,7 @@ class Callback extends AbstractView
     /**
      * Terminate this callback by rendering the given view.
      */
-    public function terminateJson(View $view): void
+    public function terminateJsonIfCanTerminate(View $view): void
     {
         if ($this->canTerminate()) {
             $this->getApp()->terminateJson($view);
@@ -147,7 +147,7 @@ class Callback extends AbstractView
     /**
      * Return proper URL argument for this callback.
      */
-    private function getUrlArguments(string $value = null): array
+    private function getUrlArguments(?string $value = null): array
     {
         return [
             self::URL_QUERY_TARGET => $this->urlTrigger,

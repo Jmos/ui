@@ -46,7 +46,7 @@ class App
     public const HOOK_BEFORE_EXIT = self::class . '@beforeExit';
     public const HOOK_BEFORE_RENDER = self::class . '@beforeRender';
 
-    private static ?string $shutdownReservedMemory; // @phpstan-ignore-line
+    private static ?string $shutdownReservedMemory; // @phpstan-ignore property.onlyRead
     private static ?int $errorReportingLevel = null;
 
     /** @var array|false Location where to load JS/CSS files */
@@ -67,7 +67,7 @@ class App
      *
      * @TODO remove, no longer needed for CDN versioning as we bundle all resources
      */
-    public $version = '5.1-dev';
+    public $version = '5.3-dev';
 
     /** @var string Name of application */
     public $title = 'Agile UI - Untitled Application';
@@ -135,7 +135,6 @@ class App
     /** @var array<string, bool> global sticky arguments */
     protected array $stickyGetArguments = [
         '__atk_json' => false,
-        '__atk_tab' => false,
     ];
 
     /** @var class-string */
@@ -409,10 +408,8 @@ class App
 
     /**
      * Get the value of a specific POST parameter from the HTTP request.
-     *
-     * @return mixed
      */
-    public function getRequestPostParam(string $key)
+    public function getRequestPostParam(string $key): string
     {
         $res = $this->tryGetRequestPostParam($key);
         if ($res === null) {
@@ -531,11 +528,6 @@ class App
             }
 
             $this->outputResponseJson($output);
-        } elseif ($this->hasRequestQueryParam('__atk_tab') && $type === 'text/html') {
-            $output = $this->getTag('script', [], '$(function () {' . $output['atkjs'] . '});')
-                . $output['html'];
-
-            $this->outputResponseHtml($output);
         } elseif ($type === 'text/html') {
             $this->outputResponseHtml($output);
         } else {
@@ -554,7 +546,7 @@ class App
     public function terminateHtml($output): void
     {
         if ($output instanceof View) {
-            $output = $output->render();
+            $output = $output->renderToHtml();
         } elseif ($output instanceof HtmlTemplate) {
             $output = $output->renderToHtml();
         }
@@ -596,7 +588,7 @@ class App
             $this->html->invokeInit();
         }
 
-        $this->layout = $this->html->add($layout); // @phpstan-ignore-line
+        $this->layout = $this->html->add($layout); // @phpstan-ignore assign.propertyType
 
         $this->initIncludes();
 
@@ -658,7 +650,7 @@ class App
      */
     public function add($object, $region = null): AbstractView
     {
-        if (!$this->layout) { // @phpstan-ignore-line
+        if (!$this->layout) { // @phpstan-ignore booleanNot.alwaysFalse
             throw (new Exception('App layout is missing'))
                 ->addSolution('$app->initLayout() must be called first');
         }
@@ -717,7 +709,6 @@ class App
     public function loadTemplate(string $filename)
     {
         $template = new $this->templateClass();
-        $template->setApp($this);
 
         if ((['.' => true, '/' => true, '\\' => true][substr($filename, 0, 1)] ?? false) || str_contains($filename, ':\\')) {
             return $template->loadFromFile($filename);
@@ -1115,7 +1106,7 @@ class App
 
         // IMPORTANT: always convert large integers to string, otherwise numbers can be rounded by JS
         // replace large JSON integers only, do not replace anything in JSON/JS strings
-        $json = preg_replace_callback('~"(?:[^"\\\\]+|\\\\.)*+"\K|\'(?:[^\'\\\\]+|\\\\.)*+\'\K'
+        $json = preg_replace_callback('~"(?:[^"\\\]+|\\\.)*+"\K|\'(?:[^\'\\\]+|\\\.)*+\'\K'
             . '|(?:^|[{\[,:])[ \n\r\t]*\K-?[1-9]\d{15,}(?=[ \n\r\t]*(?:$|[}\],:]))~s', static function ($matches) {
                 if ($matches[0] === '' || abs((int) $matches[0]) < (2 ** 53)) {
                     return $matches[0];

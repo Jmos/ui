@@ -17,8 +17,8 @@ class JsCallback extends Callback
     /** @var string Text to display as a confirmation. Set with setConfirm(..). */
     public $confirm;
 
-    /** @var array|null Use this apiConfig variable to pass API settings to Fomantic-UI in .api(). */
-    public $apiConfig;
+    /** @var array<string, mixed> Use this apiConfig variable to pass API settings to Fomantic-UI in .api(). */
+    public array $apiConfig = [];
 
     /** @var string|null Include web storage data item (key) value to be included in the request. */
     public $storeName;
@@ -26,7 +26,7 @@ class JsCallback extends Callback
     /**
      * Usually JsCallback should not allow to trigger during a reload.
      * Consider reloading a form, if triggering is allowed during the reload process
-     * then $form->model could be saved during that reload which can lead to unexpected result
+     * then $form->entity could be saved during that reload which can lead to unexpected result
      * if model ID is not properly handled.
      *
      * @var bool
@@ -41,7 +41,7 @@ class JsCallback extends Callback
             'url' => $this->getJsUrl(),
             'urlOptions' => $this->args,
             'confirm' => $this->confirm,
-            'apiConfig' => $this->apiConfig,
+            'apiConfig' => $this->apiConfig !== [] ? $this->apiConfig : null,
             'storeName' => $this->storeName,
         ])]);
     }
@@ -93,7 +93,7 @@ class JsCallback extends Callback
 
             $ajaxec = $this->getAjaxec($response);
 
-            $this->terminateAjax($ajaxec);
+            $this->terminateAjaxIfCanTerminate($ajaxec);
         });
 
         return $this;
@@ -102,17 +102,13 @@ class JsCallback extends Callback
     /**
      * A proper way to finish execution of AJAX response. Generates JSON
      * which is returned to frontend.
-     *
-     * @param ($success is true ? null : string) $msg     General message, typically won't be displayed
-     * @param bool                               $success Was request successful or not
      */
-    public function terminateAjax(JsBlock $ajaxec, $msg = null, bool $success = true): void
+    protected function terminateAjaxIfCanTerminate(JsBlock $ajaxec): void
     {
-        $data = ['success' => $success];
-        if (!$success) {
-            $data['message'] = $msg;
-        }
-        $data['atkjs'] = $ajaxec->jsRender();
+        $data = [
+            'success' => true,
+            'atkjs' => $ajaxec->jsRender(),
+        ];
 
         if ($this->canTerminate()) {
             $this->getApp()->terminateJson($data);

@@ -497,7 +497,7 @@ or `contentClass` or use the method `addContentClass()`. See the Fomantic-UI mod
 
 This alternative implementation to {php:class}`Modal` is convenient for situations
 when the need to open a dialog box is not known in advance. This class is not
-a component, but rather an Action so you **must not** add it to the Render Tree.
+a component, but rather an Action so you **must not** add it to the render tree.
 To accomplish that, use a {ref}`virtualpage`:
 
 ```
@@ -538,7 +538,7 @@ $table = \Atk4\Ui\Table::addTo($app);
 $form->setModel($bookModel);
 
 $form->onSubmit(function (Form $form) use ($table) {
-    $form->model->save();
+    $form->entity->save();
 
     return new \Atk4\Ui\Js\JsReload($table);
 });
@@ -552,7 +552,7 @@ In this example, filling out and submitting the form will result in table conten
 
 Care needs to be taken when attempting to combine the above with a {php:class}`Js\JsModal` which requires a {ref}`virtualpage` to
 store its contents. In that case, the order in which declarations are made matters because of the way the
-Render Tree is processed.
+render tree is processed.
 
 For example, in order to open a modal dialog containing a form and reload a table located on the main page
 with the updated data on form submission (thus without having to reload the entire page), the following elements are
@@ -581,7 +581,7 @@ $button = \Atk4\Ui\Button::addTo($app, ['Add Item', 'icon' => 'plus']);
 $button->on('click', new \Atk4\Ui\Js\JsModal('JSModal Title', $vp));
 
 $form->onSubmit(function (Form $form) use ($table) {
-    $form->model->save();
+    $form->entity->save();
 
     return new \Atk4\Ui\Js\JsBlock([
         $table->jsReload(),
@@ -608,7 +608,7 @@ $button = \Atk4\Ui\Button::addTo($app, ['Add Item', 'icon' => 'plus']);
 $button->on('click', new \Atk4\Ui\Js\JsModal('JSModal Title', $vp));
 
 $form->onSubmit(function (Form $form) use ($table) {
-    $form->model->save();
+    $form->entity->save();
 
     return new \Atk4\Ui\Js\JsBlock([
         $table->jsReload(),
@@ -631,7 +631,7 @@ $vp->set(function (\Atk4\Ui\VirtualPage $p) use ($table, $model) {
     $form = \Atk4\Ui\Form::addTo($p);
     $form->setModel($model);
     $form->onSubmit(function (Form $form) use ($table) {
-        $form->model->save();
+        $form->entity->save();
 
         return new \Atk4\Ui\Js\JsBlock([
             $table->jsReload(),

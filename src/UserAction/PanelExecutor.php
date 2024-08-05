@@ -150,8 +150,8 @@ class PanelExecutor extends Right implements JsExecutorInterface
     /**
      * Return proper JS statement need after action execution.
      *
-     * @param mixed      $obj
-     * @param string|int $id
+     * @param mixed $obj
+     * @param mixed $id
      */
     protected function jsGetExecute($obj, $id): JsBlock
     {
@@ -161,7 +161,7 @@ class PanelExecutor extends Right implements JsExecutorInterface
 
         return new JsBlock([
             $this->jsClose(),
-            JsBlock::fromHookResult($this->hook(BasicExecutor::HOOK_AFTER_EXECUTE, [$obj, $id]) // @phpstan-ignore-line
+            JsBlock::fromHookResult($this->hook(BasicExecutor::HOOK_AFTER_EXECUTE, [$obj, $id]) // @phpstan-ignore ternary.shortNotAllowed
                 ?: ($success ?? new JsToast('Success' . (is_string($obj) ? (': ' . $obj) : '')))),
             $this->loader->jsClearStoreData(true),
         ]);

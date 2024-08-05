@@ -24,7 +24,7 @@ use Atk4\Ui\UserAction\ExecutorFactory;
 class View extends AbstractView
 {
     /**
-     * When you call render() this will be populated with JavaScript chains.
+     * When you call renderAll() this will be populated with JavaScript chains.
      *
      * @var array<1|string, array<int, JsExpressionable>>
      *
@@ -33,6 +33,7 @@ class View extends AbstractView
     protected array $_jsActions = [];
 
     public ?Model $model = null;
+    public ?Model $entity = null;
 
     /**
      * Name of the region in the parent's template where this object will output itself.
@@ -103,22 +104,41 @@ class View extends AbstractView
         $this->setDefaults($defaults);
     }
 
+    #[\Override]
+    public function &__get(string $name)
+    {
+        // TODO remove in atk4/ui 6.0
+        if ($name === 'model' && !(new \ReflectionProperty(self::class, 'model'))->isInitialized($this) && $this->entity !== null) {
+            throw new Exception('Use View::$entity property instead for entity access');
+        }
+
+        return parent::__get($name);
+    }
+
     /**
      * Associate this view with a model. Do not place any logic in this class, instead take it
      * to renderView().
      *
      * Do not try to create your own "Model" implementation, instead you must be looking for
      * your own "Persistence" implementation.
-     *
-     * @phpstan-assert !null $this->model
      */
     public function setModel(Model $model): void
     {
-        if ($this->model !== null && $this->model !== $model) {
+        if (((new \ReflectionProperty(self::class, 'model'))->isInitialized($this) ? $this->model : $this->entity) !== null) {
+            if (((new \ReflectionProperty(self::class, 'model'))->isInitialized($this) ? $this->model : $this->entity) === $model) {
+                return;
+            }
+
             throw new Exception('Different model is already set');
         }
 
-        $this->model = $model;
+        if ($model->isEntity()) {
+            unset($this->{'model'});
+            $this->entity = $model;
+        } else {
+            unset($this->{'entity'});
+            $this->model = $model;
+        }
     }
 
     /**
@@ -143,8 +163,8 @@ class View extends AbstractView
             }
         }
 
-        $this->setModel(new Model(new Persistence\Static_($data)), $fields); // @phpstan-ignore-line
-        $this->model->getField($this->model->idField)->type = 'string'; // TODO probably unwanted
+        $this->setModel(new Model(new Persistence\Static_($data)), $fields); // @phpstan-ignore arguments.count
+        $this->model->getIdField()->type = 'string'; // TODO probably unwanted
 
         return $this->model;
     }
@@ -185,7 +205,7 @@ class View extends AbstractView
      *
      * @return $this
      */
-    public function link($url, string $target = null)
+    public function link($url, ?string $target = null)
     {
         $this->setElement('a');
 
@@ -237,10 +257,6 @@ class View extends AbstractView
             }
         }
 
-        if ($this->template !== null && (!$this->template->issetApp() || $this->template->getApp() !== $app)) {
-            $this->template->setApp($app);
-        }
-
         foreach ($addLater as [$object, $region]) {
             $this->add($object, $region);
         }
@@ -266,7 +282,7 @@ class View extends AbstractView
     #[\Override]
     public function add($object, $region = null): AbstractView
     {
-        if (!is_object($object)) { // @phpstan-ignore-line
+        if (!is_object($object)) { // @phpstan-ignore function.alreadyNarrowedType
             // for BC do not throw
             // later consider to accept strictly objects only
             $object = AbstractView::fromSeed($object);
@@ -339,7 +355,7 @@ class View extends AbstractView
      */
     public function set($content)
     {
-        if (!is_string($content) && $content !== null) { // @phpstan-ignore-line
+        if (!is_string($content) && $content !== null) { // @phpstan-ignore function.alreadyNarrowedType, notIdentical.alwaysTrue, booleanAnd.alwaysFalse
             throw (new Exception('Not sure what to do with argument'))
                 ->addMoreInfo('this', $this)
                 ->addMoreInfo('arg', $content);
@@ -393,7 +409,7 @@ class View extends AbstractView
      *
      * @return $this
      */
-    public function setStyle($property, string $value = null)
+    public function setStyle($property, ?string $value = null)
     {
         if (is_array($property)) {
             foreach ($property as $k => $v) {
@@ -511,7 +527,7 @@ class View extends AbstractView
      * If GET argument is not presently set you can specify a 2nd argument
      * to forge-set the GET argument for current view and it's sub-views.
      */
-    public function stickyGet(string $name, string $newValue = null): ?string
+    public function stickyGet(string $name, ?string $newValue = null): ?string
     {
         $this->stickyArgs[$name] = $newValue ?? $this->stickyArgs[$name] ?? $this->getApp()->tryGetRequestQueryParam($name);
 
@@ -652,7 +668,7 @@ class View extends AbstractView
      * This method is for those cases when developer want to simply render his
      * view and grab HTML himself.
      */
-    public function render(): string
+    public function renderToHtml(): string
     {
         $this->renderAll();
 
@@ -660,19 +676,6 @@ class View extends AbstractView
 
         return ($js !== '' ? $this->getApp()->getTag('script', [], '$(function () {' . $js . ';});') : '')
                . $this->renderTemplateToHtml();
-    }
-
-    /**
-     * This method is to render view to place inside a Fomantic-UI Tab.
-     */
-    public function renderToTab(): array
-    {
-        $this->renderAll();
-
-        return [
-            'atkjs' => $this->getJs()->jsRender(),
-            'html' => $this->renderTemplateToHtml(),
-        ];
     }
 
     /**
@@ -779,7 +782,6 @@ class View extends AbstractView
 
     /**
      * Create Vue.js instance.
-     * Vue.js instance can be created from Atk4\Ui\View.
      *
      * Component managed and defined by atk does not need componentDefinition variable name
      * because these are already loaded within the atk js namespace.
@@ -822,7 +824,7 @@ class View extends AbstractView
     /**
      * Emit an event on atkEvent bus.
      *
-     * example of adding a listener on for an emit event.
+     * Example of adding a listener on for an emit event:
      *
      * atk.eventBus.on('eventName', (data) => {
      *     console.log(data)
@@ -887,11 +889,11 @@ class View extends AbstractView
      *
      * @param array                 $args
      * @param JsExpressionable|null $afterSuccess
-     * @param array                 $apiConfig
+     * @param array<string, mixed>  $apiConfig
      *
      * @return JsReload
      */
-    public function jsReload($args = [], $afterSuccess = null, $apiConfig = []): JsExpressionable
+    public function jsReload($args = [], $afterSuccess = null, array $apiConfig = []): JsExpressionable
     {
         return new JsReload($this, $args, $afterSuccess, $apiConfig);
     }
@@ -1007,7 +1009,7 @@ class View extends AbstractView
         } elseif ($action instanceof UserAction\ExecutorInterface || $action instanceof UserAction\SharedExecutor || $action instanceof Model\UserAction) {
             $ex = $action instanceof Model\UserAction ? $this->getExecutorFactory()->createExecutor($action, $this) : $action;
 
-            $setupNonSharedExecutorFx = static function (UserAction\ExecutorInterface $ex) use (&$defaults, &$arguments): void {
+            $setupNonSharedExecutorFx = function (UserAction\ExecutorInterface $ex) use (&$defaults, &$arguments): void {
                 /** @var AbstractView&UserAction\ExecutorInterface $ex https://github.com/phpstan/phpstan/issues/3770 */
                 $ex = $ex;
 
@@ -1018,6 +1020,11 @@ class View extends AbstractView
                     // if "id" is not specified we assume arguments[0] is the model ID
                     $arguments[$ex->name] = $arguments[0];
                     unset($arguments[0]);
+                }
+
+                if (isset($arguments[$ex->name]) && !$arguments[$ex->name] instanceof JsExpressionable) {
+                    $exModel = $ex->getAction()->getModel();
+                    $arguments[$ex->name] = $this->getApp()->uiPersistence->typecastAttributeSaveField($exModel->getIdField(), $arguments[$ex->name]);
                 }
 
                 if ($ex instanceof UserAction\JsCallbackExecutor) {
